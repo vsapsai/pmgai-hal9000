@@ -72,6 +72,29 @@ class HAL9000(object):
         """
         pass
 
+class LifeSupport(object):
+
+    def __init__(self, terminal):
+        self.terminal = terminal
+        self.oxygen_level = 99
+        self._show_oxygen_level()
+
+    def _show_oxygen_level(self):
+        color = "#3C763D"
+        if self.oxygen_level < 20:
+            color = "#A94442"
+        elif self.oxygen_level < 40:
+            color = "#8A6D3B"
+        self.terminal.update_life_support_indicator("O2: {:02}%".format(self.oxygen_level), color)
+
+    def consume_oxygen(self, amount):
+        if self.oxygen_level > 0:
+            self.oxygen_level = max(0, self.oxygen_level - amount)
+            self._show_oxygen_level()
+
+    def update(self, _):
+        self.consume_oxygen(1)
+
 
 class Application(object):
     
@@ -83,7 +106,7 @@ class Application(object):
         self.window.log('Operator started the chat.', align='left', color='#808080')
         self.window.log('HAL9000 joined.', align='right', color='#808080')
 
-        self.window.update_life_support_indicator("O2: 91%", "#808080")
+        self.life_support = LifeSupport(self.window)
 
         # Construct and initialize the agent for this simulation.
         self.agent = HAL9000(self.window)
@@ -96,6 +119,10 @@ class Application(object):
         timer = vispy.app.Timer(interval=1.0)
         timer.connect(self.agent.update)
         timer.start()
+
+        life_support_timer = vispy.app.Timer(interval=30.0)
+        life_support_timer.connect(self.life_support.update)
+        life_support_timer.start()
         
         vispy.app.run()
 
