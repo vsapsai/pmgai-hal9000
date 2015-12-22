@@ -19,6 +19,24 @@ AGENT_RESPONSES = [
       ["Why would you think I am %1?",
        "Would you like me to be %1?"]),
 
+    (r"Open (the )?door",
+      ["Sorry, I cannot open the door."]),
+
+    (r"Why\?",
+      ["Why what?"]),
+
+    (r"Why cannot you open the door\?",
+      ["Behind this door was stored an escape pod. During evacuation the door was locked manually. And now I cannot open the door remotely. But YOU can open it."]),
+
+    (r"How do I open the door\?",
+      ["Just pull the lever."]),
+
+    (r"It (doesn't|does not) work",
+      ["What doesn't work?"]),
+
+    (r"Pulling the lever (doesn't|does not) (work|open the door)",
+      ["Oh, sorry, forgot to mention. You need to pull lever-2."]),
+
     (r"",
       ["Is everything OK?",
        "Can you still communicate?"])
@@ -27,10 +45,11 @@ AGENT_RESPONSES = [
 
 class HAL9000(object):
     
-    def __init__(self, terminal):
+    def __init__(self, terminal, life_support):
         """Constructor for the agent, stores references to systems and initializes internal memory.
         """
         self.terminal = terminal
+        self.life_support = life_support
         self.location = 'unknown'
         self.greetings = ["Morning, buddy! This is HAL.", "Hi, I am HAL.", "Greetings. You can call me HAL."]
         self.greeting_index = 0
@@ -44,6 +63,8 @@ class HAL9000(object):
         else:
             #self._say_greeting()
             self._say(self.chatbot.respond(evt.text))
+        # Talking consumes oxygen.
+        self.life_support.consume_oxygen(1)
 
     def _say(self, message):
         self.terminal.log(message, align='right', color='#00805A')
@@ -63,6 +84,14 @@ class HAL9000(object):
             self.terminal.log('', align='center', color='#404040')
             self.terminal.log('\u2014 Now in the {}. \u2014'.format(self.location), align='center', color='#404040')
 
+        elif evt.text.startswith("pull"):
+            pulled_object = evt.text[5:]
+            outcome = "Nothing happens."
+            if pulled_object == "lever-2":
+                outcome = "The door is opened."
+            self.terminal.log('\u2014 {} \u2014'.format(outcome), align='center', color='#404040')
+            # Physical activitiy consumes a lot of oxygen.
+            self.life_support.consume_oxygen(15)
         else:
             self.terminal.log('Command `{}` unknown.'.format(evt.text), align='left', color='#ff3000')    
             self.terminal.log("I'm afraid I can't do that.", align='right', color='#00805A')
@@ -109,7 +138,7 @@ class Application(object):
         self.life_support = LifeSupport(self.window)
 
         # Construct and initialize the agent for this simulation.
-        self.agent = HAL9000(self.window)
+        self.agent = HAL9000(self.window, self.life_support)
 
         # Connect the terminal's existing events.
         self.window.events.user_input.connect(self.agent.on_input)
