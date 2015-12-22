@@ -7,6 +7,23 @@ import vispy                    # Main application support.
 
 import window                   # Terminal input and display.
 
+import nltk.chat
+
+
+AGENT_RESPONSES = [
+    (r"You are (worrying|scary|disturbing)",
+      ["Yes, I am %1.",
+       "Oh, sooo %1."]),
+
+    (r"Are you ([\w\s]+)\?",
+      ["Why would you think I am %1?",
+       "Would you like me to be %1?"]),
+
+    (r"",
+      ["Is everything OK?",
+       "Can you still communicate?"])
+]
+
 
 class HAL9000(object):
     
@@ -15,11 +32,25 @@ class HAL9000(object):
         """
         self.terminal = terminal
         self.location = 'unknown'
+        self.greetings = ["Morning, buddy! This is HAL.", "Hi, I am HAL.", "Greetings. You can call me HAL."]
+        self.greeting_index = 0
+        self.chatbot = nltk.chat.Chat(AGENT_RESPONSES, nltk.chat.util.reflections)
 
     def on_input(self, evt):
         """Called when user types anything in the terminal, connected via event.
         """
-        self.terminal.log("Good morning! This is HAL.", align='right', color='#00805A')
+        if evt.text.startswith("Where am I"):
+            self._say("You are in the {}.".format(self.location))
+        else:
+            #self._say_greeting()
+            self._say(self.chatbot.respond(evt.text))
+
+    def _say(self, message):
+        self.terminal.log(message, align='right', color='#00805A')
+
+    def _say_greeting(self):
+        self._say(self.greetings[self.greeting_index])
+        self.greeting_index = (self.greeting_index + 1) % len(self.greetings)
 
     def on_command(self, evt):
         """Called when user types a command starting with `/` also done via events.
@@ -28,8 +59,9 @@ class HAL9000(object):
             vispy.app.quit()
 
         elif evt.text.startswith('relocate'):
+            self.location = evt.text[9:]
             self.terminal.log('', align='center', color='#404040')
-            self.terminal.log('\u2014 Now in the {}. \u2014'.format(evt.text[9:]), align='center', color='#404040')
+            self.terminal.log('\u2014 Now in the {}. \u2014'.format(self.location), align='center', color='#404040')
 
         else:
             self.terminal.log('Command `{}` unknown.'.format(evt.text), align='left', color='#ff3000')    
