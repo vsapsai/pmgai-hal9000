@@ -47,11 +47,23 @@ class TerminalWindow(object):
                                 show=False,
                                 keys='interactive')
         
-        self.widget = self.canvas.central_widget
+        self.root_widget = self.canvas.central_widget
+        terminal_widget = vispy.scene.widgets.Widget()
+        self.widget = self.root_widget.add_widget(terminal_widget)
         self.widget.set_transform('matrix')
         self.widget.transform.translate((0.0, -CONSOLE_LINEOFFSET))
 
         vispy.scene.visuals.GridLines(parent=self.widget, scale=(0.0, 15.984/CONSOLE_LINEHEIGHT))
+
+        self.life_support_indicator = vispy.scene.visuals.Text(parent=self.root_widget,
+                                         text="Life Support",
+                                         face="Terminal",
+                                         color="#000000",
+                                         bold=False,
+                                         font_size=20,
+                                         anchor_x="left",
+                                         anchor_y="top",
+                                         pos=[CONSOLE_MARGIN, CONSOLE_LINEOFFSET, 1.0])
 
         self.canvas.show(visible=True)
         self.canvas.events.mouse_press()            # HACK: Layout workaround for bug in Vispy 0.5.0.
@@ -107,6 +119,10 @@ class TerminalWindow(object):
         self.entry_offset += CONSOLE_LINEHEIGHT
         
         self.entries[0].pos[0][1] = self.entry_offset
+
+    def update_life_support_indicator(self, text, color):
+        self.life_support_indicator.text = text
+        self.life_support_indicator.color = color
 
     def show_input(self, text):
         self.entries[0].text = CONSOLE_PREFIX + text

@@ -83,6 +83,8 @@ class Application(object):
         self.window.log('Operator started the chat.', align='left', color='#808080')
         self.window.log('HAL9000 joined.', align='right', color='#808080')
 
+        self.window.update_life_support_indicator("O2: 91%", "#808080")
+
         # Construct and initialize the agent for this simulation.
         self.agent = HAL9000(self.window)
 
